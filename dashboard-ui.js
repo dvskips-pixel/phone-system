@@ -48,9 +48,16 @@
     metrics.classList.add('admin-metrics');
   }
 
+  function removeForgedCallbackAction() {
+    document.querySelectorAll('#view button').forEach(button => {
+      if (button.textContent.trim() === 'Send a forged callback') button.remove();
+    });
+  }
+
   function update() {
     applyLogos();
     applyAdminMetrics();
+    removeForgedCallbackAction();
   }
 
   update();
