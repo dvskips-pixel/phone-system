@@ -54,10 +54,20 @@
     });
   }
 
+  function filterInventoryNavigation() {
+    const isInventoryOfficer = document.querySelector('[data-act="role"]')?.value === 'Inventory Officer';
+    if (!isInventoryOfficer) return;
+
+    document.querySelectorAll('#nav button[data-act="nav"]').forEach(button => {
+      if (['applications', 'leases', 'payments', 'collections'].includes(button.dataset.id)) button.remove();
+    });
+  }
+
   function update() {
     applyLogos();
     applyAdminMetrics();
     removeForgedCallbackAction();
+    filterInventoryNavigation();
   }
 
   update();
