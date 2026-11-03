@@ -1965,7 +1965,9 @@ details > summary::-webkit-details-marker {
   color: #fff;
   background:
     linear-gradient(120deg, rgba(10, 29, 61, .88) 0%, rgba(13, 37, 76, .77) 48%, rgba(12, 31, 64, .70) 100%),
-    url("../assets/images/spectrum-office.jpg") center / cover no-repeat;
+    url("../assets/images/spectrum-office.jpg") center / cover no-repeat,
+    /* Fallback for the flattened GitHub Pages export, where the photo sits beside app.css. */
+    url("../spectrum-office.jpg") center / cover no-repeat;
 }
 .login-brand-panel::before,
 .login-brand-panel::after {
@@ -2455,7 +2457,9 @@ details > summary::-webkit-details-marker {
 .login-brand-panel {
   background:
     linear-gradient(110deg, rgba(8, 24, 51, .90) 0%, rgba(12, 35, 72, .76) 62%, rgba(12, 31, 64, .62) 100%),
-    url("../assets/images/spectrum-office.jpg") center / cover no-repeat;
+    url("../assets/images/spectrum-office.jpg") center / cover no-repeat,
+    /* Fallback for the flattened GitHub Pages export, where the photo sits beside app.css. */
+    url("../spectrum-office.jpg") center / cover no-repeat;
 }
 .login-brand-copy { transform: none; }
 
