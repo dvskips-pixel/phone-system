@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html><html lang="en"><head>  <meta charset="utf-8">  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">  <meta name="description" content="Spectrum Credit Phone Lease Desk - End-to-end device financing, leasing desk, and ledger management">  <title>Spectrum Credit: Phone Lease Desk</title>  <link rel="preconnect" href="https://fonts.googleapis.com">  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">  <link rel="stylesheet" href="css/app.css" onerror="this.onerror=null;this.href='app.css'"></head><body>  <main id="loginScreen" class="login-screen" hidden></main>  <div id="appShell" hidden>  <header class="topbar" id="topbar"></header>  <div class="app-layout">    <aside class="sidebar">      <div class="sidebar-brand" id="sidebarBrand"></div>      <div class="sidebar-search" id="sidebarSearch"></div>      <nav id="nav" aria-label="Main"></nav>      <div class="sidebar-user" id="sidebarUser"></div>    </aside>    <main class="main-content"><section class="dashboard-panel" id="view"></section></main>  </div>  <div id="toast" aria-live="polite"></div>  <dialog id="dlg"></dialog>  </div>  <!-- Spectrum Credit Application Core Scripts -->  <script src="js/data.js" onerror="this.onerror=null;this.src='data.js'"></script>  <script src="js/ledger.js" onerror="this.onerror=null;this.src='ledger.js'"></script>  <script src="js/engine.js" onerror="this.onerror=null;this.src='engine.js'"></script>  <script src="js/app.js" onerror="this.onerror=null;this.src='app.js'"></script></body></html><!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -8,7 +8,37 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/app.css" onerror="this.onerror=null;this.href='app.css'">
+  <style>
+    /* Minimal shell styling so the boot panel is readable even if app.css fails to load. */
+    .boot-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: radial-gradient(120% 120% at 50% 0%, #10315f 0%, #08172f 60%, #061226 100%);
+      font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: #eef4ff;
+      text-align: center;
+    }
+    .boot-overlay[hidden] { display: none; }
+    .boot-inner { max-width: 460px; display: grid; gap: 18px; justify-items: center; }
+    .boot-spinner {
+      width: 34px;
+      height: 34px;
+      border: 3px solid rgba(238, 244, 255, .22);
+      border-top-color: #5b9dff;
+      border-radius: 50%;
+      animation: boot-spin .9s linear infinite;
+    }
+    .boot-overlay.failed .boot-spinner { display: none; }
+    .boot-title { margin: 0; font-size: 1.15rem; font-weight: 700; letter-spacing: .01em; }
+    .boot-text { margin: 0; font-size: .95rem; line-height: 1.55; color: rgba(238, 244, 255, .78); }
+    .boot-text code { font-size: .88em; padding: 1px 5px; border-radius: 5px; background: rgba(238, 244, 255, .14); }
+    @keyframes boot-spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .boot-spinner { animation-duration: 2.4s; } }
+  </style>
 </head>
 <body>
   <main id="loginScreen" class="login-screen" hidden></main>
@@ -27,10 +57,99 @@
   <dialog id="dlg"></dialog>
   </div>
 
-  <!-- Spectrum Credit Application Core Scripts -->
-  <script src="js/data.js" onerror="this.onerror=null;this.src='data.js'"></script>
-  <script src="js/ledger.js" onerror="this.onerror=null;this.src='ledger.js'"></script>
-  <script src="js/engine.js" onerror="this.onerror=null;this.src='engine.js'"></script>
-  <script src="js/app.js" onerror="this.onerror=null;this.src='app.js'"></script>
+  <div id="bootPanel" class="boot-overlay" role="status" aria-live="polite">
+    <div class="boot-inner">
+      <span class="boot-spinner" aria-hidden="true"></span>
+      <h1 class="boot-title">Spectrum Credit</h1>
+      <p class="boot-text" id="bootText">Loading the phone lease desk&hellip;</p>
+    </div>
+  </div>
+
+  <noscript>
+    <style>#bootPanel { display: none !important; }</style>
+    <div id="bootNoScript" class="boot-overlay" role="alert">
+      <div class="boot-inner">
+        <h1 class="boot-title">JavaScript is disabled</h1>
+        <p class="boot-text">The Spectrum Credit lease desk is a JavaScript application. Enable JavaScript for this site, then reload the page.</p>
+      </div>
+    </div>
+  </noscript>
+
+  <!--
+    The desk is published in two layouts:
+      - the source tree: css/app.css, js/data.js, js/ledger.js, js/engine.js, js/app.js
+      - the flattened GitHub Pages export: app.css, data.js, ledger.js, engine.js, app.js
+    Load whichever one is actually deployed instead of hardcoding a single path.
+  -->
+  <script>
+  (function () {
+    'use strict';
+
+    var FILES = ['data.js', 'ledger.js', 'engine.js', 'app.js'];
+    var STYLESHEETS = ['css/app.css', 'app.css'];
+    var bootPanel = document.getElementById('bootPanel');
+    var bootText = document.getElementById('bootText');
+    var jsBase = null; // null until the deployed layout is known
+
+    function hideBootPanel() {
+      if (bootPanel) bootPanel.hidden = true;
+    }
+
+    function showBootError(message) {
+      if (!bootPanel) {
+        document.body.insertAdjacentHTML('afterbegin',
+          '<p style="font:16px/1.5 system-ui,sans-serif;padding:24px">' + message + '</p>');
+        return;
+      }
+      bootPanel.hidden = false;
+      bootPanel.classList.add('failed');
+      if (bootText) bootText.innerHTML = message;
+    }
+
+    function loadScript(src) {
+      return new Promise(function (resolve, reject) {
+        var el = document.createElement('script');
+        el.src = src;
+        el.onload = function () { resolve(); };
+        el.onerror = function () { reject(new Error(src)); };
+        document.head.appendChild(el);
+      });
+    }
+
+    function loadStylesheet() {
+      return new Promise(function (resolve) {
+        (function attempt(index) {
+          if (index >= STYLESHEETS.length) return resolve();
+          var link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = STYLESHEETS[index];
+          link.onload = function () { resolve(); };
+          link.onerror = function () {
+            if (link.parentNode) link.parentNode.removeChild(link);
+            attempt(index + 1);
+          };
+          document.head.appendChild(link);
+        })(0);
+      });
+    }
+
+    function loadCore(file) {
+      if (jsBase !== null) return loadScript(jsBase + file);
+      return loadScript('js/' + file).then(function () { jsBase = 'js/'; }, function () {
+        jsBase = '';
+        return loadScript(file);
+      });
+    }
+
+    loadStylesheet();
+
+    FILES.reduce(function (chain, file) {
+      return chain.then(function () { return loadCore(file); });
+    }, Promise.resolve()).then(hideBootPanel, function (err) {
+      showBootError('Could not load <code>' + (err && err.message ? err.message : 'the application') +
+        '</code>. The deployment is missing this file &mdash; check that <code>js/</code> and <code>css/</code> were published.');
+    });
+  })();
+  </script>
 </body>
 </html>
